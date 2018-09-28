@@ -377,14 +377,7 @@ class ChainedCompleter(object):
     # NOTE: This has to be evaluated eagerly so we get the _RetryCompletion
     # exception.
     for a in self.actions:
-      print('- %s' % a.Matches(words, index, to_complete))
-    print('*'* 80)
-
-    match_generators = [
-        a.Matches(words, index, to_complete) for a in self.actions]
-
-    for g in match_generators:
-      for match in g:
+      for match in a.Matches(words, index, to_complete):
         # Special case hack to match bash for compgen -F.  It doesn't filter by
         # to_complete!
         show = (
@@ -660,59 +653,51 @@ class RootCompleter(object):
     else:
       comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, buf)
 
+    if comp_type == completion_state_e.VAR_NAME:
+      # Non-user chain
+      chain = self.var_comp
+    elif comp_type == completion_state_e.HASH_KEY:
+      # Non-user chain
+      chain = 'TODO'
+    elif comp_type == completion_state_e.REDIR_FILENAME:
+      # Non-user chain
+      chain = FileSystemAction()
+
+    elif comp_type == completion_state_e.FIRST:
+      chain = self.comp_lookup.GetFirstCompleter()
+    elif comp_type == completion_state_e.REST:
+      chain = self.comp_lookup.GetCompleterForName(comp_words[0])
+
+    elif comp_type == completion_state_e.NONE:
+      # Null chain?  No completion?  For example,
+      # ${a:- <TAB>  -- we have no idea what to put here
+      chain = 'TODO'
+    else:
+      raise AssertionError(comp_type)
+
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', buf)
     start_time = time.time()
 
     index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
+    self.debug_f.log('Using %s', chain)
 
-    done = False
-    while not done:
-      if comp_type == completion_state_e.VAR_NAME:
-        # Non-user chain
-        chain = self.var_comp
-      elif comp_type == completion_state_e.HASH_KEY:
-        # Non-user chain
-        chain = 'TODO'
-      elif comp_type == completion_state_e.REDIR_FILENAME:
-        # Non-user chain
-        chain = FileSystemAction()
+    i = 0
+    for m in chain.Matches(comp_words, index, to_complete):
+      # TODO: need to dedupe these
+      yield m
+      i += 1
+      elapsed = time.time() - start_time
+      plural = '' if i == 1 else 'es'
+      self.progress_f.Write(
+          '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
+          plural, buf, elapsed)
 
-      elif comp_type == completion_state_e.FIRST:
-        chain = self.comp_lookup.GetFirstCompleter()
-      elif comp_type == completion_state_e.REST:
-        chain = self.comp_lookup.GetCompleterForName(comp_words[0])
-
-      elif comp_type == completion_state_e.NONE:
-        # Null chain?  No completion?  For example,
-        # ${a:- <TAB>  -- we have no idea what to put here
-        chain = 'TODO'
-      else:
-        raise AssertionError(comp_type)
-
-      self.debug_f.log('Using %s', chain)
-
-      i = 0
-      try:
-        matches = chain.Matches(comp_words, index, to_complete)
-      except _RetryCompletion:
-        pass
-      else:
-        for m in matches:
-          # TODO: need to dedupe these
-          yield m
-          i += 1
-          elapsed = time.time() - start_time
-          plural = '' if i == 1 else 'es'
-          self.progress_f.Write(
-              '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
-              plural, buf, elapsed)
-
-        elapsed = time.time() - start_time
-        plural = '' if i == 1 else 'es'
-        self.progress_f.Write(
-            'Found %d match%s for %r in %.2f seconds', i,
-            plural, buf, elapsed)
-        done = True
+    elapsed = time.time() - start_time
+    plural = '' if i == 1 else 'es'
+    self.progress_f.Write(
+        'Found %d match%s for %r in %.2f seconds', i,
+        plural, buf, elapsed)
+    done = True
 
     # TODO: Have to de-dupe and sort these?  Because 'echo' is a builtin as
     # well as a command, and we don't want to show it twice.  Although then
@@ -758,6 +743,11 @@ class ReadlineCompleter(object):
         next_completion = self.comp_iter.next()
         done = True
       except _RetryCompletion:
+        # TODO: Is it OK to retry here?  Shouldn't we retry in
+        # RootCompleter, after we already know the words?  That seems to run
+        # into some problems with Python generators and exceptions.
+        # I kind of want the 'g.send()' pattern to "prime the generator",
+        # revealing the first exception.
         pass
       except StopIteration:
         next_completion = None  # sentinel?
