@@ -827,6 +827,15 @@ class _WordEvaluator(object):
     else:
       raise AssertionError(word.__class__.__name__)
 
+  def EvalWordToPattern(self, word):
+    """
+    Given a word, returns pattern.ERE if has an ExtGlobPart, or pattern.Fnmatch
+    otherwise.
+
+    NOTE: Have ot handle nested extglob like: [[ foo == ${empty:-@(foo|bar) ]]
+    """
+    pass
+
   def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
     """
     Args:
@@ -841,6 +850,8 @@ class _WordEvaluator(object):
       $pat) echo 'matches glob pattern' ;;
       "$pat") echo 'equal to glob string' ;;  # must be glob escaped
     esac
+
+    TODO: Raise AssertionError if it has ExtGlobPart.
     """
     if word.tag == word_e.EmptyWord:
       return runtime.Str('')

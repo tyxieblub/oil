@@ -157,3 +157,18 @@ str='x'
 [[ !($str) == 1 ]]  || echo FALSE  # test if empty
 # NOTE: There cannot be a space between ! and (?
 ## stdout-json: "TRUE\nFALSE\n"
+
+#### extglob inside arg word
+shopt -s extglob
+[[ foo == @(foo|bar) ]] && echo TRUE
+[[ foo == ${unset:-@(foo|bar)} ]] && echo TRUE
+[[ fo == ${unset:-@(foo|bar)} ]] || echo FALSE
+## STDOUT:
+TRUE
+TRUE
+FALSE
+## END
+## BUG mksh STDOUT:
+TRUE
+FALSE
+## END
