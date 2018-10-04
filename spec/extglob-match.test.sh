@@ -8,7 +8,23 @@
 #### @ matches exactly one
 [[ --verbose == --@(help|verbose) ]] && echo TRUE
 [[ --oops == --@(help|verbose) ]] || echo FALSE
-## stdout-json: "TRUE\nFALSE\n"
+## STDOUT:
+TRUE
+FALSE
+## END
+
+#### pattern inside variable (dynamic parsing)
+shopt -s extglob
+pat='--@(help|verbose)'
+[[ --verbose == $pat ]] && echo TRUE
+[[ --oops == $pat ]] || echo FALSE
+## STDOUT:
+TRUE
+FALSE
+## END
+## BUG mksh STDOUT:
+FALSE
+## END
 
 #### ? matches 0 or 1
 [[ -- == --?(help|verbose) ]] && echo TRUE
