@@ -43,6 +43,15 @@ FALSE
 FALSE
 ## END
 
+#### nested @() with quotes and vars
+shopt -s extglob
+prefix=no
+[[ --no-long-option == --@(help|verbose|$prefix-@(long|short)-'option') ]] &&
+  echo TRUE
+## STDOUT:
+TRUE
+## END
+
 #### ? matches 0 or 1
 [[ -- == --?(help|verbose) ]] && echo TRUE
 [[ --oops == --?(help|verbose) ]] || echo FALSE
