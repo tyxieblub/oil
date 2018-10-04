@@ -800,12 +800,14 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.ExtGlobPart:
-      part_vals.append(runtime.StringPartValue(part.op.val, False))
+      # do_split_glob should be renamed 'unquoted'?  or inverted and renamed
+      # 'quoted'?
+      part_vals.append(runtime.StringPartValue(part.op.val, True))
       for i, w in enumerate(part.arms):
         if i != 0:
-          part_vals.append(runtime.StringPartValue('|', False))  # separator
+          part_vals.append(runtime.StringPartValue('|', True))  # separator
         self._EvalWordToParts(w, True, part_vals)  # eval like quoted
-      part_vals.append(runtime.StringPartValue(')', False))  # closing )
+      part_vals.append(runtime.StringPartValue(')', True))  # closing )
 
     else:
       raise AssertionError(part.__class__.__name__)
@@ -827,6 +829,7 @@ class _WordEvaluator(object):
     else:
       raise AssertionError(word.__class__.__name__)
 
+  # Do we need this?
   def EvalWordToPattern(self, word):
     """
     Given a word, returns pattern.ERE if has an ExtGlobPart, or pattern.Fnmatch
