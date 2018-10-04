@@ -26,6 +26,23 @@ FALSE
 FALSE
 ## END
 
+#### nested @()
+shopt -s extglob
+pat='--@(help|verbose|@(long|short))'
+[[ --long == $pat ]] && echo TRUE
+[[ --short == $pat ]] && echo TRUE
+[[ --help == $pat ]] && echo TRUE
+[[ --oops == $pat ]] || echo FALSE
+## STDOUT:
+TRUE
+TRUE
+TRUE
+FALSE
+## END
+## BUG mksh STDOUT:
+FALSE
+## END
+
 #### ? matches 0 or 1
 [[ -- == --?(help|verbose) ]] && echo TRUE
 [[ --oops == --?(help|verbose) ]] || echo FALSE
