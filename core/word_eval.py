@@ -806,7 +806,8 @@ class _WordEvaluator(object):
       for i, w in enumerate(part.arms):
         if i != 0:
           part_vals.append(runtime.StringPartValue('|', True))  # separator
-        self._EvalWordToParts(w, True, part_vals)  # eval like quoted
+        # This flattens the tree!
+        self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
       part_vals.append(runtime.StringPartValue(')', True))  # closing )
 
     else:
