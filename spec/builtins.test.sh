@@ -90,7 +90,7 @@ cd -- /
 echo $PWD
 ## stdout: /
 
-#### cd to non-symlink with -P
+#### cd to non-symlink with -P (TODO: redundant?)
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
@@ -99,17 +99,17 @@ cd -P $targ
 test $PWD = "$TMP/cd-symtarget" && echo OK
 ## stdout: OK
 
-#### cd to symlink with -L
+#### cd to symlink with -L (TODO: redundant?)
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
 ln -s $targ $lnk
 cd -L $lnk
-test $PWD = "$TMP/cd-symlink" && echo OK
+test $PWD = "$TMP/cd-symlink" && echo OK || echo $PWD
 rm -r -f $targ  # somehow we need to clean this up?
 ## stdout: OK
 
-#### cd to symlink with -P
+#### cd to symlink with -P (TODO: redundant?)
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
