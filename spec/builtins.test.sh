@@ -106,6 +106,7 @@ mkdir -p $targ
 ln -s $targ $lnk
 cd -L $lnk
 test $PWD = "$TMP/cd-symlink" && echo OK
+rm -r -f $targ  # somehow we need to clean this up?
 ## stdout: OK
 
 #### cd to symlink with -P
