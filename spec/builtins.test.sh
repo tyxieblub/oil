@@ -123,6 +123,7 @@ lnk=$TMP/cd-symlink
 mkdir -p $targ
 ln -s $targ $lnk
 
+# -L behavior is the default
 cd $lnk
 test $PWD = "$TMP/cd-symlink" && echo OK
 
@@ -138,30 +139,29 @@ OK
 ## END
 
 #### cd to relative path with -L and -P
+die() { echo "$@"; exit 1; }
+
 targ=$TMP/cd-symtarget/subdir
 lnk=$TMP/cd-symlink
 mkdir -p $targ
 ln -s $targ $lnk
 
+# -L behavior is the default
 cd $lnk/subdir
-test $PWD = "$TMP/cd-symlink/subdir" && echo OK
-cd -L ..
-test $PWD = "$TMP/cd-symlink" && echo OK
-
-# No flag behaves just like -L
-cd $lnk/subdir
-test $PWD = "$TMP/cd-symlink/subdir" && echo OK
+test $PWD = "$TMP/cd-symlink/subdir" || die "failed"
 cd ..
 test $PWD = "$TMP/cd-symlink" && echo OK
 
 cd $lnk/subdir
-test $PWD = "$TMP/cd-symlink/subdir" && echo OK
+test $PWD = "$TMP/cd-symlink/subdir" || die "failed"
+cd -L ..
+test $PWD = "$TMP/cd-symlink" && echo OK
+
+cd $lnk/subdir
+test $PWD = "$TMP/cd-symlink/subdir" || die "failed"
 cd -P ..
 test $PWD = "$TMP/cd-symtarget" && echo OK || echo $PWD
 ## STDOUT:
-OK
-OK
-OK
 OK
 OK
 OK
