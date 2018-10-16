@@ -99,15 +99,6 @@ cd -P $targ
 test $PWD = "$TMP/cd-symtarget" && echo OK
 ## stdout: OK
 
-#### cd to symlink default behavior
-targ=$TMP/cd-symtarget
-lnk=$TMP/cd-symlink
-mkdir -p $targ
-ln -s $targ $lnk
-cd $lnk
-test $PWD = "$TMP/cd-symlink" && echo OK
-## stdout: OK
-
 #### cd to symlink with -L
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
@@ -116,6 +107,35 @@ ln -s $targ $lnk
 cd -L $lnk
 test $PWD = "$TMP/cd-symlink" && echo OK
 ## stdout: OK
+
+#### cd to symlink with -P
+targ=$TMP/cd-symtarget
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+cd -P $lnk
+test $PWD = "$TMP/cd-symtarget" && echo OK
+## stdout: OK
+
+#### cd to symlink with -L and -P
+targ=$TMP/cd-symtarget
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+
+cd $lnk
+test $PWD = "$TMP/cd-symlink" && echo OK
+
+cd -L $lnk
+test $PWD = "$TMP/cd-symlink" && echo OK
+
+cd -P $lnk
+test $PWD = "$TMP/cd-symtarget" && echo OK || echo $PWD
+## STDOUT:
+OK
+OK
+OK
+## END
 
 #### cd to relative path with -L and -P
 targ=$TMP/cd-symtarget/subdir
@@ -146,15 +166,6 @@ OK
 OK
 OK
 ## END
-
-#### cd to symlink with -P
-targ=$TMP/cd-symtarget
-lnk=$TMP/cd-symlink
-mkdir -p $targ
-ln -s $targ $lnk
-cd -P $lnk
-test $PWD = "$TMP/cd-symtarget" && echo OK
-## stdout: OK
 
 #### pushd/popd
 set -o errexit
