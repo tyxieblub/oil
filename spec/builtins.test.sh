@@ -128,11 +128,19 @@ test $PWD = "$TMP/cd-symlink/subdir" && echo OK
 cd -L ..
 test $PWD = "$TMP/cd-symlink" && echo OK
 
+# No flag behaves just like -L
+cd $lnk/subdir
+test $PWD = "$TMP/cd-symlink/subdir" && echo OK
+cd ..
+test $PWD = "$TMP/cd-symlink" && echo OK
+
 cd $lnk/subdir
 test $PWD = "$TMP/cd-symlink/subdir" && echo OK
 cd -P ..
 test $PWD = "$TMP/cd-symtarget" && echo OK || echo $PWD
 ## STDOUT:
+OK
+OK
 OK
 OK
 OK
