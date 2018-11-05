@@ -12,12 +12,9 @@ invariant".
 (1) **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
 "lexical macros".
 
-(2) **Array L-values** like `a[x+1]=foo`.
-
-NOTE: bash allows splitting arithmetic expressions across word boundaries: `a[x
-+ 1]=foo`.  But I don't see this used, and it would significantly complicate
-  the OSH parser.
-
+(2) **Array L-values** like `a[x+1]=foo`.  bash allows splitting arithmetic
+expressions across word boundaries: `a[x + 1]=foo`.  But I don't see this used,
+and it would significantly complicate the OSH parser.
 
 NOTE: These two cases involve extra passes at **parse time**.  Cases that
 involve runtime code evaluation are demonstrated below.
