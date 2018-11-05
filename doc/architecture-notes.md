@@ -64,7 +64,7 @@ These are handled up front, but not in a single pass.
 
 ### Where Strings are Evaluated As Code (perhaps unintentionally)
 
-(1) Recursive Arithmetic Evaluation:
+(1) Recursive **Arithmetic Evaluation**:
 
     $ a='1+2'
     $ b='a+3'
@@ -72,6 +72,9 @@ These are handled up front, but not in a single pass.
     6
 
 This also happens for the operands to `[[ x -eq x ]]`.
+
+NOTE that `a='$(echo 3)` results in a **syntax error**.  I believe this was due
+to the ShellShock mitigation.
 
 (2) The **`unset` builtin** (not yet implemented in OSH):
 
