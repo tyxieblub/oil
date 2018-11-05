@@ -18,23 +18,9 @@ NOTE: bash allows splitting arithmetic expressions across word boundaries: `a[x
 + 1]=foo`.  But I don't see this used, and it would significantly complicate
   the OSH parser.
 
-Where bash re-parses strings at runtime:
 
-(3) The **`unset` builtin** (not yet implemented in OSH):
-
-    $ a=(1 2 3 4)
-    $ expr='a[1+1]'
-    $ unset "$expr"
-    $ argv "${a[@]}"
-    ['1', '2', '4']
-
-(4) **Var refs** with `${!x}` (not yet implemented OSH.  Relied on by
-`bash-completion`, as discovered by Greg Price)
-
-    $ a=(1 2 3 4)
-    $ expr='a[1+1]'
-    $ echo "$expr"
-    3
+NOTE: These two cases involve extra passes at **parse time**.  Cases that
+involve runtime code evaluation are demonstrated below.
 
 ## Where VirtualLineReader is used
 
@@ -68,7 +54,7 @@ These are handled up front, but not in a single pass.
 
 # Runtime Issues
 
-## Where code strings are evaluated
+## Where Strings are Evaluated As Code (intentionally)
 
 - source and eval
 - trap
@@ -77,6 +63,37 @@ These are handled up front, but not in a single pass.
   - err
   - signals
 - PS1 and PS4 (WordParser is used)
+
+## Where Strings are Evaluated As Code (perhaps unintentionally)
+
+(1) Recursive Arithmetic Evaluation:
+
+    $ a='1+2'
+    $ b='a+3'
+    $ echo $(( b ))
+    6
+
+This also happens for the operands to `[[ x -eq x ]]`.
+
+(2) The **`unset` builtin** (not yet implemented in OSH):
+
+    $ a=(1 2 3 4)
+    $ expr='a[1+1]'
+    $ unset "$expr"
+    $ argv "${a[@]}"
+    ['1', '2', '4']
+
+(3) **Var refs** with `${!x}` (not yet implemented OSH.  Relied on by
+`bash-completion`, as discovered by Greg Price)
+
+    $ a=(1 2 3 4)
+    $ expr='a[1+1]'
+    $ echo "$expr"
+    3
+
+(4) ShellShock (removed from bash): `export -f`, all variables were checked for
+a certain pattern.
+
 
 ### Function Callbacks
 
