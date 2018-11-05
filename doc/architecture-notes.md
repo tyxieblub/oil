@@ -1,7 +1,7 @@
 Notes on OSH Architecture
--------------------------
+=========================
 
-# Parse Time
+# Parser Issues
 
 ## Where we (unfortunately) must re-parse previously parsed text
 
@@ -9,14 +9,16 @@ These cases make it harder to produce good error messages with source location
 info.  They also have implications for translation, because we break the "arena
 invariant".
 
-- `alias` expansion.
-- Array L-values like `a[x+1]=foo`.
-  - NOTE: bash supports this across word boundaries: `a[x + 1]=foo`.  But this
-    causes problems for the parser, and I don't see it used.
+(1) **`alias` expansion**.  Aliases are like "lexical macros".
+
+(2) **Array L-values** like `a[x+1]=foo`.
+
+NOTE: bash supports this across word boundaries: `a[x + 1]=foo`.  But this
+causes problems for the parser, and I don't see it used.
 
 Where bash re-parses strings at runtime:
 
-- unset <expr> (not yet implemented in OSH)
+(3) The **`unset` builtin** (not yet implemented in OSH):
 
     $ a=(1 2 3 4)
     $ expr='a[1+1]'
@@ -24,8 +26,8 @@ Where bash re-parses strings at runtime:
     $ argv "${a[@]}"
     ['1', '2', '4']
 
-- Var refs with `${!x}` (relied on by `bash-completion`, as discovered by Greg
-  Price)
+(4) **Var refs** with `${!x}` (relied on by `bash-completion`, as discovered by
+Greg Price)
 
     $ a=(1 2 3 4)
     $ expr='a[1+1]'
@@ -62,7 +64,7 @@ These are handled up front, but not in a single pass.
 
 - See `osh/parse_lib.py` and its callers.
 
-# Runtime
+# Runtime Issues
 
 ## Where code strings are evaluated
 
