@@ -9,12 +9,14 @@ These cases make it harder to produce good error messages with source location
 info.  They also have implications for translation, because we break the "arena
 invariant".
 
-(1) **`alias` expansion**.  Aliases are like "lexical macros".
+(1) **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
+"lexical macros".
 
 (2) **Array L-values** like `a[x+1]=foo`.
 
-NOTE: bash supports this across word boundaries: `a[x + 1]=foo`.  But this
-causes problems for the parser, and I don't see it used.
+NOTE: bash allows splitting arithmetic expressions across word boundaries: `a[x
++ 1]=foo`.  But I don't see this used, and it would significantly complicate
+  the OSH parser.
 
 Where bash re-parses strings at runtime:
 
@@ -26,8 +28,8 @@ Where bash re-parses strings at runtime:
     $ argv "${a[@]}"
     ['1', '2', '4']
 
-(4) **Var refs** with `${!x}` (relied on by `bash-completion`, as discovered by
-Greg Price)
+(4) **Var refs** with `${!x}` (not yet implemented OSH.  Relied on by
+`bash-completion`, as discovered by Greg Price)
 
     $ a=(1 2 3 4)
     $ expr='a[1+1]'
