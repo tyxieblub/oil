@@ -5,12 +5,39 @@ Notes on OSH Architecture
 
 ## Where we (unfortunately) must re-parse previously parsed text
 
-- alias expansion
-- Array assignment like `a[x+1]=foo` (because breaking word boundaries like
-  `a[x + 1]=foo` causes a lot of problems, and I don't see it used.)
+These cases make it harder to produce good error messages with source location
+info.  They also have implications for translation, because we break the "arena
+invariant".
 
-Each of these cases has implications for translation, because we break the
-"arena invariant".
+- `alias` expansion.
+- Array L-values like `a[x+1]=foo`.
+  - NOTE: bash supports this across word boundaries: `a[x + 1]=foo`.  But this
+    causes problems for the parser, and I don't see it used.
+
+Where bash re-parses strings at runtime:
+
+- unset <expr> (not yet implemented in OSH)
+
+    $ a=(1 2 3 4)
+    $ expr='a[1+1]'
+    $ unset "$expr"
+    $ argv "${a[@]}"
+    ['1', '2', '4']
+
+- Var refs with `${!x}` (relied on by `bash-completion`, as discovered by Greg
+  Price)
+
+    $ a=(1 2 3 4)
+    $ expr='a[1+1]'
+    $ echo "$expr"
+    3
+
+## Where VirtualLineReader is used
+
+This isn't necessarily re-parsing, but it's re-reading.
+
+- alias expansion:
+- HereDoc:  We first read lines, and then
 
 ### Extra Passes Over the LST
 
@@ -30,13 +57,6 @@ These are handled up front, but not in a single pass.
 
 - Here docs with <<-.  The leading tab is lost, because we don't need it for
   translation.
-
-## Where VirtualLineReader is used
-
-This isn't re-parsing, but it's re-reading.
-
-- alias expansion
-- HereDoc
 
 ## Where parsers are instantiated
 
