@@ -85,17 +85,14 @@ This also happens for the operands to `[[ x -eq x ]]`.
 `bash-completion`, as discovered by Greg Price)
 
     $ a=(1 2 3 4)
-    $ expr='a[1+1]'
-    $ echo "$expr"
+    $ expr='a[$(echo 2 | tee BAD)]'
+    $ echo ${!expr}
     3
+    $ cat BAD
+    2
 
 (4) ShellShock (removed from bash): `export -f`, all variables were checked for
 a certain pattern.
-
-### Function Callbacks
-
-- completion hooks registered by `complete -F ls_complete_func ls`
-- bash has a `command_not_found` hook; osh doesn't yet
 
 ### Parse errors at runtime (need line numbers)
 
@@ -103,6 +100,11 @@ a certain pattern.
 - command line flag usage errors
 
 ## Other Cross-Cutting Observations
+
+### Shell Function Callbacks
+
+- completion hooks registered by `complete -F ls_complete_func ls`
+- bash has a `command_not_found` hook; osh doesn't yet
 
 ### Where Unicode is Respected
 
