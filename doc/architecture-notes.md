@@ -1,9 +1,9 @@
 Notes on OSH Architecture
 =========================
 
-# Parser Issues
+## Parser Issues
 
-## Where we (unfortunately) must re-parse previously parsed text
+### Where we (unfortunately) must re-parse previously parsed text
 
 These cases make it harder to produce good error messages with source location
 info.  They also have implications for translation, because we break the "arena
@@ -19,7 +19,7 @@ and it would significantly complicate the OSH parser.
 NOTE: These two cases involve extra passes at **parse time**.  Cases that
 involve runtime code evaluation are demonstrated below.
 
-## Where VirtualLineReader is used
+### Where VirtualLineReader is used
 
 This isn't necessarily re-parsing, but it's re-reading.
 
@@ -35,33 +35,34 @@ These are handled up front, but not in a single pass.
 - Brace Detection in a few places: `echo {a,b}`
 - Tilde Detection: `echo ~bob`, `home=~bob`
 
-## Parser Lookahead
+### Parser Lookahead
 
 - `func() { echo hi; }` vs.  `func=()  # an array`
 - precedence parsing?  I think this is also a single token.
 
-## Where the arena invariant is broken
+### Where the arena invariant is broken
 
 - Here docs with <<-.  The leading tab is lost, because we don't need it for
   translation.
 
-## Where parsers are instantiated
+### Where parsers are instantiated
 
 - See `osh/parse_lib.py` and its callers.
 
-# Runtime Issues
+## Runtime Issues
 
-## Where Strings are Evaluated As Code (intentionally)
+### Where Strings are Evaluated As Code (intentionally)
 
-- source and eval
-- trap
+- `source` builtin (`CommandParser`)
+` `eval` builtin
+- `trap` builtin
   - exit
   - debug
   - err
   - signals
-- PS1 and PS4 (WordParser is used)
+- `$PS1` and `$PS4` (WordParser)
 
-## Where Strings are Evaluated As Code (perhaps unintentionally)
+### Where Strings are Evaluated As Code (perhaps unintentionally)
 
 (1) Recursive Arithmetic Evaluation:
 
@@ -91,18 +92,19 @@ This also happens for the operands to `[[ x -eq x ]]`.
 (4) ShellShock (removed from bash): `export -f`, all variables were checked for
 a certain pattern.
 
-
 ### Function Callbacks
 
 - completion hooks registered by `complete -F ls_complete_func ls`
 - bash has a `command_not_found` hook; osh doesn't yet
 
-## Parse errors at runtime (need line numbers)
+### Parse errors at runtime (need line numbers)
 
 - [ -a -a -a ]
 - command line flag usage errors
 
-## Where unicode is respected
+## Other Cross-Cutting Observations
+
+### Where Unicode is Respected
 
 - ${#s} -- length in code points
 - ${s:1:2} -- offsets in code points
@@ -113,7 +115,7 @@ Where bash respects it:
 - [[ a < b ]] and [ a '<' b ] for sorting
 - ${foo,} and ${foo^} for lowercase / uppercase
 
-## Parse-time and Runtime Pairs
+### Parse-time and Runtime Pairs
 
 - echo -e '\x00\n' and echo $'\x00\n' (shared in OSH)
 - test / [ and [[ (shared in OSH)
@@ -123,13 +125,13 @@ Where bash respects it:
 - expr and $(( )) (expr not in shell)
 - later: find and our own language
 
-# Build Time
+## Build Time
 
-## Dependencies
+### Dependencies
 
 - Optional: readline
 
-## Borrowed Code
+### Borrowed Code
 
 - All of OPy:
   - pgen2
@@ -138,7 +140,7 @@ Where bash respects it:
 - ASDL front end from CPython (heavily refactored)
 - core/tdop.py: Heavily adapted from tinypy
 
-## Generated Code
+### Generated Code
 
 - See `build/dev.sh`
 
