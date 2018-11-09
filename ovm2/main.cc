@@ -215,6 +215,11 @@ class Code {
   }
 
  private:
+  inline Handle GetField(int field_index) const {
+    int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
+    return slab[field_index];
+  }
+
   inline int64_t FieldAsInt(int field_index) const;
   inline Str FieldAsStr(int field_index) const;
   inline Tuple FieldAsTuple(int field_index) const;
@@ -487,22 +492,20 @@ class OHeap {
   Cell* cells_;
 };
 
+
 //
 // Code implementation.  Must come after OHeap declaration.
 //
 
 inline int64_t Code::FieldAsInt(int field_index) const {
-  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-  Handle h = slab[field_index];
-
+  Handle h = GetField(field_index);
   int64_t i;
   assert(heap_->AsInt(h, &i));  // invalid bytecode not handled
   return i;
 }
 
 inline Str Code::FieldAsStr(int field_index) const {
-  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-  Handle h = slab[field_index];
+  Handle h = GetField(field_index);
 
   Str s;
   assert(heap_->AsStr(h, &s));  // invalid bytecode not handled
@@ -510,8 +513,7 @@ inline Str Code::FieldAsStr(int field_index) const {
 }
 
 inline Tuple Code::FieldAsTuple(int field_index) const {
-  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-  Handle h = slab[field_index];
+  Handle h = GetField(field_index);
 
   Tuple t;
   assert(heap_->AsTuple(h, &t));  // invalid bytecode not handled
