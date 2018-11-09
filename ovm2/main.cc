@@ -223,6 +223,33 @@ class Code {
   Cell* self_;
 };
 
+class Func {
+ public:
+  Func(OHeap* heap, Cell* self) 
+      : heap_(heap),
+        self_(self) {
+  }
+  // Code is copyable?
+#if 0
+  Code code() const {
+    Handle h = 0;  // TODO: Field access for handle
+    Code c(heap_, heap_->cells_ + h);
+    return c;
+  }
+#endif
+  Tuple defaults() const {
+    Tuple t;
+    return t;
+    //return FieldAsTuple(1);
+  }
+  // Fields: code, globals, defaults, __doc__,
+  // And note that we have to SET them too.
+
+ private:
+  OHeap* heap_;
+  Cell* self_;
+};
+
 class OHeap {
  public:
   OHeap() : slabs_(nullptr), num_cells_(0), max_cells_(0), cells_(nullptr) {
