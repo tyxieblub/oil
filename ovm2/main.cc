@@ -9,7 +9,7 @@
 
 #include "opcode.h"
 
-#define VERBOSE_LOOP 0
+#define VERBOSE_OPS 1
 #define VERBOSE_NAMES 0
 #define VERBOSE_VALUE_STACK 0
 #define VERBOSE_ALLOC 0  // for New*() functions
@@ -57,17 +57,8 @@ class OHeap;
 Why func_print(const OHeap& heap, const Args& args, Rets* rets);
 
 //
-// Utilities
+// Constants
 //
-
-// Log messages to stdout.
-void log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vprintf(fmt, args);
-  va_end(args);
-  printf("\n");
-}
 
 // TODO: Generate this?
 const int TAG_NONE = -1;
@@ -77,6 +68,7 @@ const int TAG_FLOAT = -4;
 const int TAG_STR =  -5;
 const int TAG_TUPLE = -6;
 const int TAG_CODE = -7;
+const int TAG_FUNC = -8;
 
 // Should this be zero?  Positive are user defined, negative are native, 0 is
 // invalid?  Useful for NewCell() to return on allocation failure.  And
@@ -101,6 +93,45 @@ const char* kTagDebugString[] = {
 const char* TagDebugString(int tag) {
   return kTagDebugString[-tag];
 }
+
+//
+// Utilities
+//
+
+// Log messages to stdout.
+void log(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+  printf("\n");
+}
+
+// Implement hash and equality functors for unordered_map.
+struct NameHash {
+  int operator() (const char* s) const {
+    // DJB hash: http://www.cse.yorku.ca/~oz/hash.html
+    int h = 5381;
+
+    while (char c = *s++) {
+      h = (h << 5) + h + c;
+    }
+    return h;
+  }
+};
+
+struct NameEq {
+  bool operator() (const char* x, const char* y) const {
+    return strcmp(x, y) == 0;
+  }
+};
+
+// Dictionary of names (char*) to value (Handle).
+//
+// TODO: if we de-dupe all the names in OHeap, and there's no runtime code
+// generation, each variable name string will have exactly one address.  So
+// then can we use pointer comparison for equality / hashing?  Would be nice.
+typedef unordered_map<const char*, Handle, NameHash, NameEq> NameLookup;
 
 
 // 16 bytes
@@ -357,6 +388,34 @@ class OHeap {
     return h;
   }
 
+  Handle NewTuple(int initial_size) {
+    assert(0);
+    return kInvalidHandle;
+  }
+
+  Handle NewFunc(Handle code, NameLookup* globals) {
+    Handle h = NewCell();
+    memset(cells_ + h, 0, sizeof(Cell));
+    cells_[h].tag = TAG_FUNC;
+
+    // NOTE: This should be a Cell because we want to freeze it!
+
+    // This sould be a pointer to a slab.  TODO: So we need a function to
+    // allocate a slab with 3 fields?  code, globals, defaults are essential.
+    // THen it could be small.
+    //
+    // BUT we also want a docstring?  That will be useful for running some code.
+    // So it needs to be a slab.
+    //
+    // Should there be indirection with "globals"?  It should be its own handle?
+    // Yes I think it's a handle to an entry of sys.modules?
+
+    cells_[h].ptr = nullptr;
+
+    assert(0);
+    return kInvalidHandle;
+  }
+
   int Last() {
     return num_cells_ - 1;
   }
@@ -535,32 +594,6 @@ struct Block {
   uint16_t jump_target;  // Called 'handler' in CPython.
 };
 
-// Implement hash and equality functors for unordered_set.
-struct NameHash {
-  int operator() (const char* s) const {
-    // DJB hash: http://www.cse.yorku.ca/~oz/hash.html
-    int h = 5381;
-
-    while (char c = *s++) {
-      h = (h << 5) + h + c;
-    }
-    return h;
-  }
-};
-
-struct NameEq {
-  bool operator() (const char* x, const char* y) const {
-    return strcmp(x, y) == 0;
-  }
-};
-
-// Dictionary of names (char*) to value (Handle).
-//
-// TODO: if we de-dupe all the names in OHeap, and there's no runtime code
-// generation, each variable name string will have exactly one address.  So
-// then can we use pointer comparison for equality / hashing?  Would be nice.
-typedef unordered_map<const char*, Handle, NameHash, NameEq> NameLookup;
-
 class Frame {
  public:
   // TODO: Reserve the right size for these stacks?
@@ -570,6 +603,7 @@ class Frame {
         value_stack_(),
         block_stack_(),
         last_i_(0),
+        globals_(),
         locals_() {
   }
   // Take the handle of a string, and return a handle of a value.
@@ -602,6 +636,7 @@ class Frame {
   vector<Handle> value_stack_;
   vector<Block> block_stack_;
   int last_i_;  // index into bytecode (which is variable length)
+  NameLookup globals_;
  private:
   NameLookup locals_;
 };
@@ -628,6 +663,7 @@ class VM {
 
   OHeap* heap_;
   vector<Frame*> call_stack_;  // call stack
+  Handle modules;  // like sys.modules.  A dictionary of globals.
 
   // See PyThreadState for other stuff that goes here.
   // Exception info, profiling, tracing, counters, etc.
@@ -709,14 +745,14 @@ Why VM::RunFrame(Frame* frame) {
     uint8_t op = bytecode[frame->last_i_];
     int oparg;
     frame->last_i_++;
-#if VERBOSE_LOOP
+#if VERBOSE_OPS
     printf("%20s", kOpcodeNames[op]);
 #endif
 
     if (op >= HAVE_ARGUMENT) {
       int i = frame->last_i_;
       oparg = bytecode[i] + (bytecode[i+1] << 8);
-#if VERBOSE_LOOP
+#if VERBOSE_OPS
       printf(" %5d (last_i_ = %d)", oparg, i);
       if (oparg < 0) {
         log(" oparg bytes: %d %d", bytecode[i], bytecode[i+1]);
@@ -724,7 +760,7 @@ Why VM::RunFrame(Frame* frame) {
 #endif
       frame->last_i_ += 2;
     }
-#if VERBOSE_LOOP
+#if VERBOSE_OPS
     printf("\n");
 #endif
 
@@ -943,6 +979,22 @@ Why VM::RunFrame(Frame* frame) {
       value_stack.pop_back();
       why = Why::Return;
       break;
+
+    case MAKE_FUNCTION: {
+      Handle code = value_stack.back();
+      value_stack.pop_back();
+      // TODO: default arguments are on the stack.
+      if (oparg) {
+        //Handle defaults = heap_->NewTuple(oparg);  // initial size
+        for (int i = 0; i < oparg; ++i) {
+          value_stack.pop_back();
+        }
+      }
+      // the function is run with the same globals as the frame it was defined in
+      NameLookup* globals = &frame->globals_;
+      Handle func = heap_->NewFunc(code, globals);
+      value_stack.push_back(func);
+    }
 
     default:
       log("Unhandled instruction");
