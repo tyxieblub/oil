@@ -166,6 +166,7 @@ class InteractiveLineReader(object):
   """
   def __init__(self):
     self.prompt_str = ''
+    self.pending_lines = []  # for completion to use
     self.Reset()  # initialize self.prompt_str
 
   def GetLine(self):
@@ -174,12 +175,15 @@ class InteractiveLineReader(object):
     except EOFError:
       print('^D')  # bash prints 'exit'; mksh prints ^D.
       line = None
+    else:
+      self.pending_lines.append(line)
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     return line
 
   def Reset(self):
     self.prompt_str = _PS1
+    del self.pending_lines[:]
 
 
 def MainLoop(reader, hook):
@@ -188,14 +192,16 @@ def MainLoop(reader, hook):
     if line is None:
       break
 
-    # TODO: check line for \
-    # Simulate the parser.
-
-    # Erase lines before execution
+    # Erase lines before execution or displaying PS2
     EraseLines(hook.num_lines_last_displayed)
-    hook.Reset()
-    sys.stdout.write(line)
 
+    if line.endswith('\\\n'):
+      continue
+
+    # Write all the lines
+    sys.stdout.write(''.join(reader.pending_lines))
+
+    hook.Reset()
     reader.Reset()
 
 
