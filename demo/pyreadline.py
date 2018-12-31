@@ -89,8 +89,9 @@ class DisplayCallback(object):
     - what does readline do?
   """
 
-  def __init__(self, comp_state, max_lines=5):
+  def __init__(self, comp_state, reader, max_lines=5):
     self.comp_state = comp_state
+    self.reader = reader
     self.max_lines = max_lines  # TODO: Respect this!
     self.num_lines_last_displayed = 0
 
@@ -121,16 +122,8 @@ class DisplayCallback(object):
 
     # Also need to move back to the end of line, before readline?
 
-    #sys.stdout.write('\x1b[%dC' % 4)  # RIGHT
-    #sys.stdout.write('\x1b[%dD' % 1)  # RIGHT by prompt
-
-    if 0:
-      # PROMPT again
-      sys.stdout.write('$ ')
-      sys.stdout.write(self.comp_state['ORIG'])
-    else:
-      n = len(self.comp_state['ORIG']) + 2  # length of prompt
-      sys.stdout.write('\x1b[%dC' % n)  # RIGHT
+    n = len(self.comp_state['ORIG']) + len(self.reader.prompt_str)
+    sys.stdout.write('\x1b[%dC' % n)  # RIGHT
 
 
 def EraseLines(n):
@@ -149,6 +142,11 @@ def _SigIntHandler(unused, unused_frame):
   """Do nothing.
 
   Hm OSH doesn't do anything either.  I think we should cancel the command.
+
+  I kind of like how fish deletes the prompt!  There is no evidence of the
+  cancelled command.
+
+  NOTE: What if were in a sleep state?  That seems to work.
   """
   pass
 
@@ -157,30 +155,70 @@ def RegisterSigIntHandler():
   signal.signal(signal.SIGINT, _SigIntHandler)
 
 
+_PS1 = 'demo$ '
+_PS2 = '> '  # A different length to test DisplayCallback
+
+
+class InteractiveLineReader(object):
+  """Simplified version of OSH prompt.
+
+  Holds PS1 / PS2 state.
+  """
+  def __init__(self):
+    self.prompt_str = ''
+    self.Reset()  # initialize self.prompt_str
+
+  def GetLine(self):
+    try:
+      line = raw_input(self.prompt_str) + '\n'  # newline required
+    except EOFError:
+      print('^D')  # bash prints 'exit'; mksh prints ^D.
+      line = None
+
+    self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
+    return line
+
+  def Reset(self):
+    self.prompt_str = _PS1
+
+
+def MainLoop(reader, hook):
+  while True:
+    line = reader.GetLine()
+    if line is None:
+      break
+
+    # TODO: check line for \
+    # Simulate the parser.
+
+    # Erase lines before execution
+    EraseLines(hook.num_lines_last_displayed)
+    hook.Reset()
+    sys.stdout.write(line)
+
+    reader.Reset()
+
+
 def main(argv):
   RegisterSigIntHandler()
 
+  # Right now this is used to set the original command.
   comp_state = {}
+
   readline.set_completer(CompletionCallback(comp_state))
 
   # If we do this, we get the whole line.  Then we need to use DisplayCallback
   # to get it.
   readline.set_completer_delims('')
 
-  hook = DisplayCallback(comp_state)
+  reader = InteractiveLineReader()
+  hook = DisplayCallback(comp_state, reader)
+
   readline.set_completion_display_matches_hook(hook)
 
   readline.parse_and_bind('tab: complete')
-  while True:
-    try:
-      x = raw_input('$ ')
-    except EOFError:
-      print()
-      break
-    # Erase lines before execution
-    EraseLines(hook.num_lines_last_displayed)
-    hook.Reset()
-    print(x)
+
+  MainLoop(reader, hook)
 
 
 if __name__ == '__main__':
