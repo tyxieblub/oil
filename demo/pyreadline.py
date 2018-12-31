@@ -12,16 +12,23 @@ Inputs:
 
 Actions:
   - Display completions
+    - Depends on terminal width.  When do we query that?
   - Display a 1-line message showing lack of completions ('no variables that
     begin with $')
   - Execute a command
   - Clear N lines below the prompt (has to happen a lot)
+
+TODO:
+- Do we care about terminal resizes?  I think not.
+- But we care about terminal width.
+
 
 """
 from __future__ import print_function
 
 import readline
 import signal
+import subprocess
 import sys
 
 
@@ -138,21 +145,31 @@ def EraseLines(n):
   sys.stdout.write('\x1b[%dA' % (n))
 
 
-def _SigIntHandler(unused, unused_frame):
-  """Do nothing.
+class SigIntHandler(object):
 
-  Hm OSH doesn't do anything either.  I think we should cancel the command.
+  def __init__(self, hook):
+    self.hook = hook
 
-  I kind of like how fish deletes the prompt!  There is no evidence of the
-  cancelled command.
+  def __call__(self, unused, unused_frame):
+    """Do nothing.
 
-  NOTE: What if were in a sleep state?  That seems to work.
-  """
-  pass
+    Hm OSH doesn't do anything either.  I think we should cancel the command.
+
+    I kind of like how fish deletes the prompt!  There is no evidence of the
+    cancelled command.
+
+    NOTE: What if were in a sleep state?  That seems to work.
+    """
+    # Cancel the command
+    #print('%d' % self.hook.num_lines_last_displayed)
+    print('^C')
+    #sys.stdout.write('\n')  # This is necessary to get us in the same state?
+    #print('')
+    EraseLines(self.hook.num_lines_last_displayed)
+    print('')
 
 
-def RegisterSigIntHandler():
-  signal.signal(signal.SIGINT, _SigIntHandler)
+    # Now how do I interrupt the reader?
 
 
 _PS1 = 'demo$ '
@@ -170,6 +187,15 @@ class InteractiveLineReader(object):
     self.Reset()  # initialize self.prompt_str
 
   def GetLine(self):
+    # NOTE: If we install our own SIGINT handler, we don't get
+    # KeyboardInterrupt here.
+    # But if we do, then we get KeyboardInterrupt in the wrong spots?  e.g.
+    # while another command is running.  For example, we will get it in wait().
+    # Maybe have to change the signal state every time?
+    #
+    # Set it back to DFL so that we get something from raw_input.  Or maybe we
+    # shoudl write our own raw_input?
+
     try:
       line = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
@@ -198,15 +224,19 @@ def MainLoop(reader, hook):
     if line.endswith('\\\n'):
       continue
 
+    cmd = ''.join(reader.pending_lines)
     # Write all the lines
-    sys.stdout.write(''.join(reader.pending_lines))
+    sys.stdout.write(cmd)
+
+    if cmd.startswith('sleep'):
+      argv = cmd.split()
+      subprocess.call(argv)
 
     hook.Reset()
     reader.Reset()
 
 
 def main(argv):
-  RegisterSigIntHandler()
 
   # Right now this is used to set the original command.
   comp_state = {}
@@ -219,6 +249,10 @@ def main(argv):
 
   reader = InteractiveLineReader()
   hook = DisplayCallback(comp_state, reader)
+  handler = SigIntHandler(hook)
+  #print('%s %s' % (handler, callable(handler)))
+
+  signal.signal(signal.SIGINT, handler)
 
   readline.set_completion_display_matches_hook(hook)
 
