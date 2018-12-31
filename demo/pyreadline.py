@@ -22,7 +22,6 @@ def Words(prefix):
 
   candidates = [first + w for w in words]
 
-  #log('words = %s', words)
   for c in candidates:
     if c.startswith(prefix):
       yield c + ' '
