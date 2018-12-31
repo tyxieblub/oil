@@ -1,10 +1,27 @@
 #!/usr/bin/python
 """
 pyreadline.py
+
+TODO: Model this as a state machine?
+
+Inputs:
+  - entering a line that's incomplete
+  - entering a line that finishes a command
+  - hitting TAB for complete
+  - Ctrl-C to cancel!  (make sure to delete stuff here)
+
+Actions:
+  - Display completions
+  - Display a 1-line message showing lack of completions ('no variables that
+    begin with $')
+  - Execute a command
+  - Clear N lines below the prompt (has to happen a lot)
+
 """
 from __future__ import print_function
 
 import readline
+import signal
 import sys
 
 
@@ -128,7 +145,21 @@ def EraseLines(n):
   sys.stdout.write('\x1b[%dA' % (n))
 
 
+def _SigIntHandler(unused, unused_frame):
+  """Do nothing.
+
+  Hm OSH doesn't do anything either.  I think we should cancel the command.
+  """
+  pass
+
+
+def RegisterSigIntHandler():
+  signal.signal(signal.SIGINT, _SigIntHandler)
+
+
 def main(argv):
+  RegisterSigIntHandler()
+
   comp_state = {}
   readline.set_completer(CompletionCallback(comp_state))
 
