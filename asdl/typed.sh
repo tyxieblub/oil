@@ -29,7 +29,9 @@ iter() {
 
 iter2() {
   asdl/run.sh gen-demo2-asdl
-  typecheck _devbuild/gen/demo2_typed_asdl.py
+  typecheck _devbuild/gen/demo2_typed_asdl.py asdl/demo2.py
+
+  asdl/demo2.py "$@"
 }
 
 "$@"
