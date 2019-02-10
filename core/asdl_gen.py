@@ -71,6 +71,22 @@ f.close()
       from core.util import log
       log('Wrote %s', pickle_out_path)
 
+  elif action == 'mypy':  # typed mypy
+    with open(schema_path) as f:
+      schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
+
+    f = sys.stdout
+
+    f.write("""\
+from asdl import const  # For const.NO_INTEGER
+from asdl import runtime
+
+from core import util
+""")
+
+    v = gen_python.GenMyPyVisitor(f)
+    v.VisitModule(schema_ast)
+
   else:
     raise RuntimeError('Invalid action %r' % action)
 

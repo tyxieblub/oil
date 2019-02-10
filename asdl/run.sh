@@ -69,8 +69,13 @@ gen-python() {
 
 gen-demo-asdl() {
   local out=_devbuild/gen/demo_asdl.py
-  touch _tmp/__init__.py
   gen-python asdl/demo.asdl > $out
+  wc -l $out
+}
+
+gen-demo-typed-asdl() {
+  local out=_devbuild/gen/demo_typed_asdl.py
+  core/asdl_gen.py mypy asdl/demo.asdl > $out
   wc -l $out
 }
 
