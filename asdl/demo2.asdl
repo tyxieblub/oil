@@ -7,4 +7,6 @@ module arith {
     Break
   | Continue
   | Return(int status)
+
+  source_location = (string path, int line, int col, int length)
 }

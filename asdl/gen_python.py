@@ -200,6 +200,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # 1. enum for tag (cflow_e)
     # 2. base class for inheritance (cflow_t)
     # 3. namespace for classes (cflow)
+    #
+    # Should code use cflow_e.tag or isinstance()?
+    # isinstance() is better for MyPy I think.  But tag is better for C++.
+    # int tag = static_cast<cflow>(node).tag;
 
     # enum for the tag
     self.Emit('class %s_e(object):' % sum_name, depth)
