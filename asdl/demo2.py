@@ -16,7 +16,10 @@ cflow_e = demo_asdl.cflow_e
 source_location = demo_asdl.source_location
 
 
+from typing import List
+
 def main(argv):
+  # type: (List[str]) -> None
   print('Hello from demo2.py')
 
   op = op_id_e.Plus

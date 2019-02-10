@@ -19,6 +19,7 @@ class SimpleObj(Obj):
   Other simple objects: int, str, maybe later a float.
   """
   def __init__(self, enum_id, name):
+    # type: (int, str) -> None
     self.enum_id = enum_id
     self.name = name
 
@@ -32,10 +33,12 @@ class SimpleObj(Obj):
   # bool_arg_type_e.Undefined = bool_arg_type_e(1, 'Undefined')
 
   def __hash__(self):
+    # type: () -> int
     # Could it be the integer self.enum_id?
     return hash(self.__class__.__name__ + self.name)
 
   def __repr__(self):
+    # type: () -> str
     return '<%s %s %s>' % (self.__class__.__name__, self.name, self.enum_id)
 
 

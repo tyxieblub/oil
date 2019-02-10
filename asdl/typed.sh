@@ -14,8 +14,8 @@ main() {
 mypy() { ~/.local/bin/mypy "$@"; }
 
 typecheck() {
-  #mypy --py2 --strict "$@"
-  mypy --py2 "$@"
+  mypy --py2 --strict "$@"
+  #mypy --py2 "$@"
 }
 
 check-arith() {
