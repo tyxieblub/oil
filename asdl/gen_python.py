@@ -158,6 +158,25 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     args = ', '.join('%s=None' % f.name for f in desc.fields)
     self.Emit('  def __init__(self, %s):' % args, depth)
 
+    # defaults:
+    # int is 0 like C++?
+    # str is ''?
+    # There is no such thing as unset?
+    # No I guess you can have nullptr for unset.  But not for ints.
+
+    arg_types = []
+    for f in desc.fields:
+      # TODO: handle more types
+
+      if f.type == 'string':
+        type_str = 'str'
+      else:
+        type_str = f.type
+      #arg_types.append(type_str)
+      arg_types.append('Union[%s, None]' % type_str)
+
+    self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), depth, reflow=False)
+
     for f in desc.fields:
       # This logic is like _MakeFieldDescriptors
       default = None

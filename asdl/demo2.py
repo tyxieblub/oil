@@ -27,7 +27,8 @@ def main(argv):
   n1 = cflow.Break()
   n2 = cflow.Return()  # hm I would like a type error here
 
-  n3 = cflow.Return('hi')
+  #n3 = cflow.Return('hi')  # type error, yay!
+  n3 = cflow.Return(3)
 
   print(n1)
   print(n2)
