@@ -27,4 +27,9 @@ iter() {
   check-arith
 }
 
+iter2() {
+  asdl/run.sh gen-demo2-asdl
+  typecheck _devbuild/gen/demo2_typed_asdl.py
+}
+
 "$@"

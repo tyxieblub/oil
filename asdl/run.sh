@@ -79,6 +79,12 @@ gen-demo-typed-asdl() {
   wc -l $out
 }
 
+gen-demo2-asdl() {
+  local out=_devbuild/gen/demo2_typed_asdl.py
+  core/asdl_gen.py mypy asdl/demo2.asdl > $out
+  wc -l $out
+}
+
 unit() {
   # This test is for the code dynamically generated with py_meta.py.
   #test/unit.sh unit asdl/arith_ast_test.py
