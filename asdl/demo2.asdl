@@ -1,4 +1,10 @@
 module arith {
   -- Simple Sum Type
   op_id = Plus | Minus | Star
+
+  -- Compound Sum Type
+  cflow =
+    Break
+  | Continue
+  | Return(int status)
 }

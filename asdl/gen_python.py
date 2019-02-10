@@ -149,7 +149,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # oheap serialization.  TODO: measure the effect of __slots__, and then get
     # rid of FIELDS?  Or you can just make it an alias.
     # FIELDS = self.__slots__.
-    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
+    #self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('  __slots__ = %s' % quoted_fields, depth)
 
     self.Emit('', depth)
@@ -187,24 +187,29 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # oil_cmd.Simple.
     fq_name = '%s__%s' % (sum_name, cons.name)
     if cons.fields:
-      self._GenClass(cons, fq_name, sum_name, depth, tag_num=tag_num)
+      self._GenClass(cons, fq_name, sum_name + '_t', depth, tag_num=tag_num)
     else:
       # No fields
-      self.Emit('class %s(%s):' % (fq_name, sum_name), depth)
-      self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % fq_name, depth)
+      self.Emit('class %s(%s_t):' % (fq_name, sum_name), depth)
       self.Emit('  tag = %d'  % tag_num, depth)
       self.Emit('', depth)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
-    # define command_e
+    # Three types:
+    #
+    # 1. enum for tag (cflow_e)
+    # 2. base class for inheritance (cflow_t)
+    # 3. namespace for classes (cflow)
+
+    # enum for the tag
     self.Emit('class %s_e(object):' % sum_name, depth)
     for i, variant in enumerate(sum.types):
       self.Emit('  %s = %d' % (variant.name, i + 1), depth)
     self.Emit('', depth)
 
     # the base class, e.g. 'oil_cmd'
-    self.Emit('class %s(runtime.CompoundObj):' % sum_name, depth)
-    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % sum_name, depth)
+    self.Emit('class %s_t(runtime.CompoundObj):' % sum_name, depth)
+    self.Emit('  pass', depth)
     self.Emit('', depth)
 
     for i, t in enumerate(sum.types):
@@ -212,12 +217,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # e.g. 'oil_cmd' is the superclass
       self.VisitConstructor(t, sum_name, tag_num, depth)
 
+    # Emit a namespace
+    self.Emit('class %s(object):' % sum_name, depth)
     # Put everything in a namespace of the base class, so we can instantiate
     # with oil_cmd.Simple()
     for i, t in enumerate(sum.types):
       # e.g. op_id.Plus = op_id__Plus.
       fq_name = '%s__%s' % (sum_name, t.name)
-      self.Emit('%s.%s = %s' % (sum_name, t.name, fq_name), depth)
+      self.Emit('  %s = %s' % (t.name, fq_name), depth)
     self.Emit('', depth)
 
   def VisitProduct(self, product, name, depth):
