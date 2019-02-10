@@ -122,14 +122,16 @@ class GenClassesVisitor(visitor.AsdlVisitor):
 class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
-    self.Emit('class %s_e(runtime.SimpleObj):' % name, depth)
-    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
+    # First emit a type
+    self.Emit('class %s_t(runtime.SimpleObj):' % name, depth)
+    self.Emit('  pass', depth)
     self.Emit('', depth)
 
-    # Just use #define, since enums aren't namespaced.
+    # Now emit a namespace
+    self.Emit('class %s_e(object):' % name, depth)
     for i, variant in enumerate(sum.types):
-      attr = '%s_e.%s = %s_e(%d, %r)' % (
-          name, variant.name, name, i + 1, variant.name)
+      attr = '  %s = %s_t(%d, %r)' % (
+          variant.name, name, i + 1, variant.name)
       self.Emit(attr, depth)
     self.Emit('', depth)
 

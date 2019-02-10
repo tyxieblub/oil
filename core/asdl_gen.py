@@ -79,7 +79,7 @@ f.close()
 
     f.write("""\
 from asdl import const  # For const.NO_INTEGER
-from asdl import runtime
+from asdl import typed_runtime as runtime
 
 from core import util
 """)
