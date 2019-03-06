@@ -15,7 +15,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.6/releases/x86_64/alpine-minirootfs-3.6.2-x86_64.tar.gz'
+readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.9/releases/x86_64/alpine-minirootfs-3.9.2-x86_64.tar.gz'
 readonly CHROOT_DIR=_chroot/alpine1
 
 readonly DISTRO_BUILD_CHROOT_DIR=_chroot/alpine-distro-build
@@ -92,7 +92,7 @@ destroy-chroot() {
 enter-chroot() {
   local chroot_dir=${1:-$CHROOT_DIR}
   shift
-  sudo chroot $chroot_dir "$@"
+  sudo unshare -u chroot $chroot_dir "$@"
 }
 
 interactive() {
@@ -145,5 +145,49 @@ echo DONE
 EOF
 }
 test-tar() { sudo $0 _test-tar "$@"; }
+
+add-spec-sh-deps() {
+  local chroot_dir=${1:-$CHROOT_DIR}
+  sudo chroot $chroot_dir /bin/sh <<EOF
+apk update
+apk add python2 coreutils
+EOF
+}
+
+_copy-spec-sh(){
+  local chroot_dir=${1:-$CHROOT_DIR}
+  local name=${2:-oil}
+  local version=${3:-$OIL_VERSION}
+
+  local dest=$chroot_dir/src/$name-$version/
+  rm -r -f $dest  # make sure it's empty
+  mkdir -p $dest
+  cp -rv test $dest
+  cp -rv spec $dest
+}
+copy-spec-sh() { sudo $0 _copy-spec-sh "$@"; }
+
+_test-spec-sh() {
+  local chroot_dir=${1:-$CHROOT_DIR}
+  local name=${2:-oil}
+  local version=${3:-$OIL_VERSION}
+
+  local target=_bin/${name}.ovm
+  #local target=_bin/${name}.ovm-dbg
+
+  enter-chroot "$chroot_dir" /bin/sh <<EOF
+set -e
+cd src/$name-$version
+echo
+echo "*** Linking bin/osh to installed version"
+mkdir -p bin
+ln -sf /usr/local/bin/osh bin/osh
+echo "*** Running spec.sh prompt"
+./test/spec.sh prompt
+echo DONE
+EOF
+}
+test-spec-sh() { sudo $0 _test-spec-sh "$@"; }
+
 
 "$@"
